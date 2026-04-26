@@ -8,6 +8,7 @@ import {
   Text,
   TouchableOpacity,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -56,12 +57,9 @@ function goalsAgainst(goalsStr: string): number {
   return parseInt(goalsStr.split(":")[1] ?? "0", 10);
 }
 
-function normalizeTeams(liveData: FlashscoreTeam[] | undefined): { teams: Team[]; isLive: boolean } {
-  if (!liveData || liveData.length === 0) {
-    return { teams: ekstraklasaTable, isLive: false };
-  }
-
-  const teams: Team[] = liveData.map((row, index) => ({
+function normalizeTeams(liveData: FlashscoreTeam[]): Team[] {
+  if (!liveData || liveData.length === 0) return ekstraklasaTable;
+  return liveData.map((row, index) => ({
     position: index + 1,
     name: row.name,
     shortName: row.name.substring(0, 3).toUpperCase(),
@@ -73,11 +71,9 @@ function normalizeTeams(liveData: FlashscoreTeam[] | undefined): { teams: Team[]
     goalsAgainst: goalsAgainst(row.goals),
     goalDifference: row.goal_difference,
     points: row.points,
-    form: ["W", "D", "L", "W", "W"],
+    form: ["W", "D", "L", "W", "W"] as Team["form"],
     badge: badgeForUrl(row.team_url),
   }));
-
-  return { teams, isLive: true };
 }
 
 export default function TableScreen() {
@@ -88,7 +84,12 @@ export default function TableScreen() {
 
   const topPadding = Platform.OS === "web" ? 67 : insets.top;
 
-  const { teams, isLive } = useMemo(() => normalizeTeams(data), [data]);
+  const isLive = data?.isLive ?? false;
+  const details = data?.details ?? null;
+  const teams = useMemo(
+    () => (isLive ? normalizeTeams(data!.standings) : ekstraklasaTable),
+    [data, isLive],
+  );
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -103,10 +104,32 @@ export default function TableScreen() {
         ]}
       >
         <View style={styles.headerLeft}>
-          <Text style={[styles.league, { color: colors.primary }]}>Ekstraklasa</Text>
-          <Text style={[styles.season, { color: colors.mutedForeground }]}>
-            {isLive ? "2025/26 – live data" : "2025/26 – fallback data"}
-          </Text>
+          {details?.image_path ? (
+            <Image
+              source={{ uri: details.image_path }}
+              style={styles.leagueLogo}
+              resizeMode="contain"
+            />
+          ) : null}
+          <View style={styles.headerTitles}>
+            <Text style={[styles.league, { color: colors.primary }]}>
+              {details?.name ?? "Ekstraklasa"}
+            </Text>
+            <View style={styles.seasonRow}>
+              {details?.country?.small_image_path ? (
+                <Image
+                  source={{ uri: details.country.small_image_path }}
+                  style={styles.flagIcon}
+                  resizeMode="contain"
+                />
+              ) : null}
+              <Text style={[styles.season, { color: colors.mutedForeground }]}>
+                {details
+                  ? `${details.country.name} · ${details.start_year}/${details.end_year}`
+                  : "2025/26 Season"}
+              </Text>
+            </View>
+          </View>
         </View>
         <View style={[styles.liveBadge, { backgroundColor: colors.accent }]}>
           <View
@@ -154,9 +177,7 @@ export default function TableScreen() {
           ListFooterComponent={
             <>
               <Legend />
-              <View
-                style={{ height: Platform.OS === "web" ? 34 : insets.bottom + 20 }}
-              />
+              <View style={{ height: Platform.OS === "web" ? 34 : insets.bottom + 20 }} />
             </>
           }
           renderItem={({ item }) => (
@@ -194,9 +215,13 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     borderBottomWidth: 1,
   },
-  headerLeft: {},
-  league: { fontSize: 24, fontWeight: "800", letterSpacing: -0.5 },
-  season: { fontSize: 13, marginTop: 2 },
+  headerLeft: { flexDirection: "row", alignItems: "center", gap: 10 },
+  leagueLogo: { width: 44, height: 44 },
+  headerTitles: { justifyContent: "center" },
+  seasonRow: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 2 },
+  flagIcon: { width: 16, height: 12 },
+  league: { fontSize: 22, fontWeight: "800", letterSpacing: -0.5 },
+  season: { fontSize: 12 },
   liveBadge: {
     flexDirection: "row",
     alignItems: "center",

@@ -96,6 +96,19 @@ router.get("/ekstraklasa/tournament/ids", async (req, res) => {
   }
 });
 
+router.get("/ekstraklasa/tournament/details", async (req, res) => {
+  try {
+    const tournamentStageId = String(req.query["tournament_stage_id"] ?? "rgKvyuf4");
+    const data = await flashscoreFetch(
+      `/tournaments/details?tournament_stage_id=${encodeURIComponent(tournamentStageId)}`,
+    );
+    res.json(data);
+  } catch (err) {
+    req.log.error({ err }, "Failed to load tournament details");
+    res.status(500).json({ error: "Failed to load tournament details" });
+  }
+});
+
 router.get("/ekstraklasa/tournament/standings", async (req, res) => {
   try {
     const tournamentStageId = String(req.query["tournament_stage_id"] ?? "");
