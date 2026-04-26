@@ -8,6 +8,21 @@
 import * as zod from "zod";
 
 /**
+ * Returns AI-powered analysis of a team or the full table
+ * @summary Analyze team or table with AI
+ */
+export const AnalyzeTeamBody = zod.object({
+  prompt: zod.string().describe("The user's question or analysis request"),
+  context: zod
+    .string()
+    .describe("JSON string of the current table data or team data"),
+});
+
+export const AnalyzeTeamResponse = zod.object({
+  analysis: zod.string().describe("AI-generated analysis"),
+});
+
+/**
  * Returns server health status
  * @summary Health check
  */

@@ -5,24 +5,118 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
+  MutationFunction,
   QueryFunction,
   QueryKey,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult,
 } from "@tanstack/react-query";
 
-import type { HealthStatus } from "./api.schemas";
+import type {
+  AnalyzeRequest,
+  AnalyzeResponse,
+  HealthStatus,
+} from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
-import type { ErrorType } from "../custom-fetch";
+import type { ErrorType, BodyType } from "../custom-fetch";
 
 type AwaitedInput<T> = PromiseLike<T> | T;
 
 type Awaited<O> = O extends AwaitedInput<infer T> ? T : never;
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
+/**
+ * Returns AI-powered analysis of a team or the full table
+ * @summary Analyze team or table with AI
+ */
+export const getAnalyzeTeamUrl = () => {
+  return `/api/ekstraklasa/analyze`;
+};
+
+export const analyzeTeam = async (
+  analyzeRequest: AnalyzeRequest,
+  options?: RequestInit,
+): Promise<AnalyzeResponse> => {
+  return customFetch<AnalyzeResponse>(getAnalyzeTeamUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(analyzeRequest),
+  });
+};
+
+export const getAnalyzeTeamMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof analyzeTeam>>,
+    TError,
+    { data: BodyType<AnalyzeRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof analyzeTeam>>,
+  TError,
+  { data: BodyType<AnalyzeRequest> },
+  TContext
+> => {
+  const mutationKey = ["analyzeTeam"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof analyzeTeam>>,
+    { data: BodyType<AnalyzeRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return analyzeTeam(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AnalyzeTeamMutationResult = NonNullable<
+  Awaited<ReturnType<typeof analyzeTeam>>
+>;
+export type AnalyzeTeamMutationBody = BodyType<AnalyzeRequest>;
+export type AnalyzeTeamMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Analyze team or table with AI
+ */
+export const useAnalyzeTeam = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof analyzeTeam>>,
+    TError,
+    { data: BodyType<AnalyzeRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof analyzeTeam>>,
+  TError,
+  { data: BodyType<AnalyzeRequest> },
+  TContext
+> => {
+  return useMutation(getAnalyzeTeamMutationOptions(options));
+};
 
 /**
  * Returns server health status

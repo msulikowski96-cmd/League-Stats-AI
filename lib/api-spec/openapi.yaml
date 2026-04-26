@@ -10,7 +10,28 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: ai
+    description: AI analysis operations
 paths:
+  /ekstraklasa/analyze:
+    post:
+      operationId: analyzeTeam
+      tags: [ai]
+      summary: Analyze team or table with AI
+      description: Returns AI-powered analysis of a team or the full table
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnalyzeRequest"
+      responses:
+        "200":
+          description: Analysis result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyzeResponse"
   /healthz:
     get:
       operationId: healthCheck
@@ -26,6 +47,26 @@ paths:
                 $ref: "#/components/schemas/HealthStatus"
 components:
   schemas:
+    AnalyzeRequest:
+      type: object
+      properties:
+        prompt:
+          type: string
+          description: The user's question or analysis request
+        context:
+          type: string
+          description: JSON string of the current table data or team data
+      required:
+        - prompt
+        - context
+    AnalyzeResponse:
+      type: object
+      properties:
+        analysis:
+          type: string
+          description: AI-generated analysis
+      required:
+        - analysis
     HealthStatus:
       type: object
       properties:

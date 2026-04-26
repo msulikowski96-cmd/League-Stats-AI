@@ -2,7 +2,7 @@
 
 ## Overview
 
-pnpm workspace monorepo using TypeScript. Each package manages its own dependencies.
+Ekstraklasa Table Analyzer — a mobile app for Polish football league standings with AI-powered analysis.
 
 ## Stack
 
@@ -15,6 +15,19 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - **Validation**: Zod (`zod/v4`), `drizzle-zod`
 - **API codegen**: Orval (from OpenAPI spec)
 - **Build**: esbuild (CJS bundle)
+- **Mobile**: Expo (React Native)
+- **AI**: OpenAI via Replit AI Integrations
+
+## Artifacts
+
+- **ekstraklasa** — Expo mobile app for Ekstraklasa league table + AI analysis
+- **api-server** — Express API server with AI analysis endpoint (`POST /api/ekstraklasa/analyze`)
+
+## Features
+
+- Full 18-team Ekstraklasa 2025/26 table with color-coded zone bars
+- Team detail modal with stats, form, and AI chat
+- AI Analysis tab for full-table questions powered by GPT
 
 ## Key Commands
 

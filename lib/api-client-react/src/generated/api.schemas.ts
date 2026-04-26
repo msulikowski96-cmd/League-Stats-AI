@@ -5,6 +5,18 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export interface AnalyzeRequest {
+  /** The user's question or analysis request */
+  prompt: string;
+  /** JSON string of the current table data or team data */
+  context: string;
+}
+
+export interface AnalyzeResponse {
+  /** AI-generated analysis */
+  analysis: string;
+}
+
 export interface HealthStatus {
   status: string;
 }

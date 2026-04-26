@@ -1,0 +1,27 @@
+kind = "mobile"
+previewPath = "/"
+title = "Ekstraklasa Analyzer"
+version = "1.0.0"
+id = "artifacts/ekstraklasa"
+router = "expo-domain"
+
+[[integratedSkills]]
+name = "expo"
+version = "1.0.0"
+
+[[services]]
+ensurePreviewReachable = "/status"
+name = "expo"
+paths = [ "/" ]
+localPort = 25277
+
+[services.development]
+run = "pnpm --filter @workspace/ekstraklasa run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/ekstraklasa", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/ekstraklasa", "run", "serve" ]
+
+[services.env]
+PORT = "25277"
+BASE_PATH = "/"
