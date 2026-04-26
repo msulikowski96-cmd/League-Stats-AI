@@ -131,6 +131,40 @@ router.get("/ekstraklasa/tournament/standings", async (req, res) => {
   }
 });
 
+router.get("/ekstraklasa/tournament/results", async (req, res) => {
+  try {
+    const tournamentTemplateId = String(req.query["tournament_template_id"] ?? "lrMHUHDc");
+    const seasonId = String(req.query["season_id"] ?? "187");
+    const page = String(req.query["page"] ?? "1");
+
+    const data = await flashscoreFetch(
+      `/tournaments/results?tournament_template_id=${encodeURIComponent(tournamentTemplateId)}&season_id=${encodeURIComponent(seasonId)}&page=${encodeURIComponent(page)}`,
+    );
+
+    res.json(data);
+  } catch (err) {
+    req.log.error({ err }, "Failed to load tournament results");
+    res.status(500).json({ error: "Failed to load tournament results" });
+  }
+});
+
+router.get("/ekstraklasa/tournament/fixtures", async (req, res) => {
+  try {
+    const tournamentTemplateId = String(req.query["tournament_template_id"] ?? "lrMHUHDc");
+    const seasonId = String(req.query["season_id"] ?? "187");
+    const page = String(req.query["page"] ?? "1");
+
+    const data = await flashscoreFetch(
+      `/tournaments/fixtures?tournament_template_id=${encodeURIComponent(tournamentTemplateId)}&season_id=${encodeURIComponent(seasonId)}&page=${encodeURIComponent(page)}`,
+    );
+
+    res.json(data);
+  } catch (err) {
+    req.log.error({ err }, "Failed to load tournament fixtures");
+    res.status(500).json({ error: "Failed to load tournament fixtures" });
+  }
+});
+
 router.get("/ekstraklasa/general/tournaments", async (req, res) => {
   try {
     const countryId = String(req.query["country_id"] ?? "");
