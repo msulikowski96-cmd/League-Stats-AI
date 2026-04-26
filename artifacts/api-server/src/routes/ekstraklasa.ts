@@ -81,6 +81,21 @@ router.get("/ekstraklasa/tournament", async (req, res) => {
   }
 });
 
+router.get("/ekstraklasa/tournament/ids", async (req, res) => {
+  try {
+    const tournamentUrl = String(req.query["tournament_url"] ?? "/football/poland/ekstraklasa-2025-2026/");
+
+    const ids = await flashscoreFetch(
+      `/tournaments/ids?tournament_url=${encodeURIComponent(tournamentUrl)}`,
+    );
+
+    res.json(ids);
+  } catch (err) {
+    req.log.error({ err }, "Failed to load tournament ids");
+    res.status(500).json({ error: "Failed to load tournament ids" });
+  }
+});
+
 router.get("/ekstraklasa/general/tournaments", async (req, res) => {
   try {
     const countryId = String(req.query["country_id"] ?? "");
