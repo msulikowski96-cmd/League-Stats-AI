@@ -19,7 +19,7 @@ import { TeamDetail } from "@/components/TeamDetail";
 import { TableHeader } from "@/components/TableHeader";
 import { Legend } from "@/components/Legend";
 import { ResultCard } from "@/components/ResultCard";
-import { useTournament, type FlashscoreTeam } from "@/hooks/useTournament";
+import { useTournament, type FlashscoreTeam, type FlashscoreFormEntry } from "@/hooks/useTournament";
 import { ekstraklasaTable, type Team } from "@/data/table";
 
 const BADGE_MAP: Record<string, string> = {
@@ -59,7 +59,27 @@ function goalsAgainst(goalsStr: string): number {
   return parseInt(goalsStr.split(":")[1] ?? "0", 10);
 }
 
-function normalizeTeams(liveData: FlashscoreTeam[]): Team[] {
+function buildFormFromStats(wins: number, draws: number, losses: number): Team["form"] {
+  const result: Team["form"] = [];
+  for (let i = 0; i < wins; i++) result.push("W");
+  for (let i = 0; i < draws; i++) result.push("D");
+  for (let i = 0; i < losses; i++) result.push("L");
+  return result.slice(0, 5) as Team["form"];
+}
+
+function buildFormMap(formData: FlashscoreFormEntry[]): Map<string, Team["form"]> {
+  const last5 = formData.filter((e) => e.matches_played === 5);
+  const map = new Map<string, Team["form"]>();
+  for (const entry of last5) {
+    map.set(entry.team_id, buildFormFromStats(entry.wins, entry.draws, entry.losses));
+  }
+  return map;
+}
+
+function normalizeTeams(
+  liveData: FlashscoreTeam[],
+  formMap: Map<string, Team["form"]>,
+): Team[] {
   if (!liveData || liveData.length === 0) return ekstraklasaTable;
   return liveData.map((row, index) => ({
     position: index + 1,
@@ -73,7 +93,7 @@ function normalizeTeams(liveData: FlashscoreTeam[]): Team[] {
     goalsAgainst: goalsAgainst(row.goals),
     goalDifference: row.goal_difference,
     points: row.points,
-    form: ["W", "D", "L", "W", "W"] as Team["form"],
+    form: formMap.get(row.team_id) ?? (["W", "D", "L", "W", "D"] as Team["form"]),
     badge: badgeForUrl(row.team_url),
   }));
 }
@@ -88,9 +108,11 @@ export default function TableScreen() {
   const isLive = data?.isLive ?? false;
   const details = data?.details ?? null;
   const results = data?.results ?? [];
+
+  const formMap = useMemo(() => buildFormMap(data?.form ?? []), [data?.form]);
   const teams = useMemo(
-    () => (isLive ? normalizeTeams(data!.standings) : ekstraklasaTable),
-    [data, isLive],
+    () => (isLive ? normalizeTeams(data!.standings, formMap) : ekstraklasaTable),
+    [data, isLive, formMap],
   );
 
   const ResultsStrip = results.length > 0 ? (
@@ -110,7 +132,6 @@ export default function TableScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Header */}
       <View
         style={[
           styles.header,
@@ -162,7 +183,6 @@ export default function TableScreen() {
         </View>
       </View>
 
-      {/* Body */}
       {isLoading ? (
         <View style={styles.centre}>
           <ActivityIndicator size="large" color={colors.primary} />

@@ -13,6 +13,19 @@ export interface FlashscoreTeam {
   points: number;
 }
 
+export interface FlashscoreFormEntry {
+  team_id: string;
+  team_url: string;
+  name: string;
+  matches_played: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  goals: string;
+  goal_difference: number;
+  points: number;
+}
+
 export interface FlashscoreMatchTeam {
   team_id: string;
   name: string;
@@ -50,6 +63,7 @@ export interface TournamentData {
   standings: FlashscoreTeam[];
   details: TournamentDetails | null;
   results: FlashscoreResult[];
+  form: FlashscoreFormEntry[];
   isLive: boolean;
 }
 
@@ -65,6 +79,7 @@ async function fetchAll(): Promise<TournamentData> {
     standings: unknown;
     details: unknown;
     results: unknown;
+    form: unknown;
   };
 
   const standings = Array.isArray(raw.standings) ? (raw.standings as FlashscoreTeam[]) : [];
@@ -73,8 +88,9 @@ async function fetchAll(): Promise<TournamentData> {
   const results = Array.isArray(raw.results)
     ? (raw.results as FlashscoreResult[]).slice(0, 20)
     : [];
+  const form = Array.isArray(raw.form) ? (raw.form as FlashscoreFormEntry[]) : [];
 
-  return { standings, details, results, isLive: standings.length > 0 };
+  return { standings, details, results, form, isLive: standings.length > 0 };
 }
 
 export function useTournament() {

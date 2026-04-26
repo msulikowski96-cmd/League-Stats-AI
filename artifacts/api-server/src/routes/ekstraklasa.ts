@@ -47,6 +47,17 @@ async function flashscoreFetch(path: string) {
   if (!res.ok) throw new Error(`Flashscore request failed: ${res.status}`);
 
   const data = await res.json() as unknown;
+
+  if (
+    data !== null &&
+    typeof data === "object" &&
+    !Array.isArray(data) &&
+    "message" in (data as object)
+  ) {
+    const msg = (data as { message: string }).message;
+    throw new Error(`Flashscore API error: ${msg}`);
+  }
+
   cache.set(path, { data, expiresAt: Date.now() + CACHE_TTL_MS });
   return data;
 }
@@ -64,28 +75,37 @@ async function fetchAll() {
     let standings: unknown = fallbackTable;
     let details: unknown = null;
     let results: unknown = [];
+    let form: unknown = [];
 
     try {
       standings = await flashscoreFetch(
         `/tournaments/standings?tournament_stage_id=rgKvyuf4&tournament_id=AgtpmqHN&type=overall`,
       );
-    } catch { /* use fallback */ }
+    } catch (e) { console.error("[fetchAll] standings failed:", String(e)); }
 
-    await delay(1100);
+    await delay(2500);
 
     try {
       details = await flashscoreFetch(`/tournaments/details?tournament_stage_id=rgKvyuf4`);
-    } catch { /* details optional */ }
+    } catch (e) { console.error("[fetchAll] details failed:", String(e)); }
 
-    await delay(1100);
+    await delay(2500);
 
     try {
       results = await flashscoreFetch(
         `/tournaments/results?tournament_template_id=lrMHUHDc&season_id=187&page=1`,
       );
-    } catch { /* results optional */ }
+    } catch (e) { console.error("[fetchAll] results failed:", String(e)); }
 
-    const payload = { standings, details, results };
+    await delay(2500);
+
+    try {
+      form = await flashscoreFetch(
+        `/tournaments/standings/form?tournament_stage_id=rgKvyuf4&tournament_id=AgtpmqHN&type=overall`,
+      );
+    } catch (e) { console.error("[fetchAll] form failed:", String(e)); }
+
+    const payload = { standings, details, results, form };
     cache.set(ALL_CACHE_KEY, { data: payload, expiresAt: Date.now() + CACHE_TTL_MS });
     allFetchInProgress = null;
     return payload;
@@ -96,11 +116,30 @@ async function fetchAll() {
 
 router.get("/ekstraklasa/all", async (req, res) => {
   try {
+    if (req.query["refresh"] === "1") {
+      cache.delete(ALL_CACHE_KEY);
+      allFetchInProgress = null;
+    }
     const data = await fetchAll();
     res.json(data);
   } catch (err) {
     req.log.error({ err }, "Failed to load all tournament data");
-    res.json({ standings: fallbackTable, details: null, results: [] });
+    res.json({ standings: fallbackTable, details: null, results: [], form: [] });
+  }
+});
+
+router.get("/ekstraklasa/tournament/standings/form", async (req, res) => {
+  try {
+    const tournamentStageId = String(req.query["tournament_stage_id"] ?? "rgKvyuf4");
+    const tournamentId = String(req.query["tournament_id"] ?? "AgtpmqHN");
+    const type = String(req.query["type"] ?? "overall");
+    const data = await flashscoreFetch(
+      `/tournaments/standings/form?tournament_stage_id=${encodeURIComponent(tournamentStageId)}&tournament_id=${encodeURIComponent(tournamentId)}&type=${encodeURIComponent(type)}`,
+    );
+    res.json(data);
+  } catch (err) {
+    req.log.error({ err }, "Failed to load standings form");
+    res.status(500).json({ error: "Failed to load standings form" });
   }
 });
 
