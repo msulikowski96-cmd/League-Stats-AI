@@ -81,6 +81,27 @@ router.get("/ekstraklasa/tournament", async (req, res) => {
   }
 });
 
+router.get("/ekstraklasa/general/tournaments", async (req, res) => {
+  try {
+    const countryId = String(req.query["country_id"] ?? "");
+    const sportId = String(req.query["sport_id"] ?? "");
+
+    if (!countryId || !sportId) {
+      res.status(400).json({ error: "country_id and sport_id are required" });
+      return;
+    }
+
+    const data = await flashscoreFetch(
+      `/general/tournaments?country_id=${encodeURIComponent(countryId)}&sport_id=${encodeURIComponent(sportId)}`,
+    );
+
+    res.json(data);
+  } catch (err) {
+    req.log.error({ err }, "Failed to load general tournaments");
+    res.status(500).json({ error: "Failed to load general tournaments" });
+  }
+});
+
 router.post("/ekstraklasa/analyze", async (req, res) => {
   try {
     const { prompt, context } = req.body as { prompt: string; context: string };
