@@ -1,41 +1,48 @@
 import { useQuery } from "@tanstack/react-query";
 
-import type { TournamentDetails, TournamentIds } from "@/components/tableTypes";
+const TOURNAMENT_URL = "/football/poland/ekstraklasa-2025-2026/";
+const TOURNAMENT_STAGE_ID = "rgKvyuf4";
+const TOURNAMENT_ID = "AgtpmqHN";
 
-async function fetchTournament() {
-  const baseUrl = process.env.EXPO_PUBLIC_DOMAIN ? `https://${process.env.EXPO_PUBLIC_DOMAIN}` : "";
+export interface FlashscoreTeam {
+  team_id: string;
+  team_url: string;
+  name: string;
+  matches_played: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  goals: string;
+  goal_difference: number;
+  points: number;
+}
 
-  const idsRes = await fetch(
-    `${baseUrl}/api/ekstraklasa/tournament/ids?tournament_url=${encodeURIComponent("/football/poland/ekstraklasa-2025-2026/")}`,
+async function fetchStandings(): Promise<FlashscoreTeam[]> {
+  const baseUrl = process.env.EXPO_PUBLIC_DOMAIN
+    ? `https://${process.env.EXPO_PUBLIC_DOMAIN}`
+    : "";
+
+  const res = await fetch(
+    `${baseUrl}/api/ekstraklasa/tournament/standings?tournament_stage_id=${encodeURIComponent(TOURNAMENT_STAGE_ID)}&tournament_id=${encodeURIComponent(TOURNAMENT_ID)}&type=overall`,
   );
-  if (!idsRes.ok) {
-    throw new Error("Failed to load tournament ids");
+
+  if (!res.ok) {
+    throw new Error(`Standings request failed: ${res.status}`);
   }
-  const ids = (await idsRes.json()) as TournamentIds;
 
-  const standingsRes = await fetch(
-    `${baseUrl}/api/ekstraklasa/tournament/standings?tournament_stage_id=${encodeURIComponent(ids.tournament_stage_id)}&tournament_id=${encodeURIComponent(ids.tournament_id)}&type=overall`,
-  );
-  if (!standingsRes.ok) {
-    throw new Error("Failed to load standings");
+  const data = (await res.json()) as unknown;
+  if (!Array.isArray(data) || data.length === 0) {
+    throw new Error("Empty standings returned");
   }
-  const standings = (await standingsRes.json()) as unknown;
 
-  const detailsRes = await fetch(
-    `${baseUrl}/api/ekstraklasa/tournament/ids?tournament_url=${encodeURIComponent("/football/poland/ekstraklasa-2025-2026/")}`,
-  );
-  const details = (await detailsRes.json()) as TournamentIds;
-
-  return {
-    ids,
-    details: details as unknown as TournamentDetails,
-    standings,
-  };
+  return data as FlashscoreTeam[];
 }
 
 export function useTournament() {
   return useQuery({
-    queryKey: ["tournament", "ekstraklasa-2025-2026"],
-    queryFn: fetchTournament,
+    queryKey: ["tournament", "ekstraklasa-standings"],
+    queryFn: fetchStandings,
+    staleTime: 5 * 60 * 1000,
+    retry: 2,
   });
 }
