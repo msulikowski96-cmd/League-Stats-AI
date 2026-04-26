@@ -1,8 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 
-const TOURNAMENT_STAGE_ID = "rgKvyuf4";
-const TOURNAMENT_ID = "AgtpmqHN";
-
 export interface FlashscoreTeam {
   team_id: string;
   team_url: string;
@@ -14,6 +11,21 @@ export interface FlashscoreTeam {
   goals: string;
   goal_difference: number;
   points: number;
+}
+
+export interface FlashscoreMatchTeam {
+  team_id: string;
+  name: string;
+  short_name: string | null;
+  small_image_path: string;
+}
+
+export interface FlashscoreResult {
+  match_id: string;
+  timestamp: number;
+  home_team: FlashscoreMatchTeam;
+  away_team: FlashscoreMatchTeam;
+  scores: { home: number; away: number };
 }
 
 export interface TournamentDetails {
@@ -37,45 +49,39 @@ export interface TournamentDetails {
 export interface TournamentData {
   standings: FlashscoreTeam[];
   details: TournamentDetails | null;
+  results: FlashscoreResult[];
   isLive: boolean;
 }
 
-async function fetchTournamentData(): Promise<TournamentData> {
+async function fetchAll(): Promise<TournamentData> {
   const baseUrl = process.env.EXPO_PUBLIC_DOMAIN
     ? `https://${process.env.EXPO_PUBLIC_DOMAIN}`
     : "";
 
-  const [standingsRes, detailsRes] = await Promise.allSettled([
-    fetch(
-      `${baseUrl}/api/ekstraklasa/tournament/standings?tournament_stage_id=${encodeURIComponent(TOURNAMENT_STAGE_ID)}&tournament_id=${encodeURIComponent(TOURNAMENT_ID)}&type=overall`,
-    ),
-    fetch(
-      `${baseUrl}/api/ekstraklasa/tournament/details?tournament_stage_id=${encodeURIComponent(TOURNAMENT_STAGE_ID)}`,
-    ),
-  ]);
+  const res = await fetch(`${baseUrl}/api/ekstraklasa/all`);
+  if (!res.ok) throw new Error(`/api/ekstraklasa/all failed: ${res.status}`);
 
-  let standings: FlashscoreTeam[] = [];
-  let details: TournamentDetails | null = null;
+  const raw = (await res.json()) as {
+    standings: unknown;
+    details: unknown;
+    results: unknown;
+  };
 
-  if (standingsRes.status === "fulfilled" && standingsRes.value.ok) {
-    const raw = (await standingsRes.value.json()) as unknown;
-    if (Array.isArray(raw) && raw.length > 0) {
-      standings = raw as FlashscoreTeam[];
-    }
-  }
+  const standings = Array.isArray(raw.standings) ? (raw.standings as FlashscoreTeam[]) : [];
+  const details =
+    raw.details && typeof raw.details === "object" ? (raw.details as TournamentDetails) : null;
+  const results = Array.isArray(raw.results)
+    ? (raw.results as FlashscoreResult[]).slice(0, 20)
+    : [];
 
-  if (detailsRes.status === "fulfilled" && detailsRes.value.ok) {
-    details = (await detailsRes.value.json()) as TournamentDetails;
-  }
-
-  return { standings, details, isLive: standings.length > 0 };
+  return { standings, details, results, isLive: standings.length > 0 };
 }
 
 export function useTournament() {
   return useQuery({
     queryKey: ["tournament", "ekstraklasa-2025-2026"],
-    queryFn: fetchTournamentData,
+    queryFn: fetchAll,
     staleTime: 5 * 60 * 1000,
-    retry: 2,
+    retry: 1,
   });
 }

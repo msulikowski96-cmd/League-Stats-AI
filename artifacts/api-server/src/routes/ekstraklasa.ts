@@ -4,32 +4,38 @@ import { openai } from "@workspace/integrations-openai-ai-server";
 const router = Router();
 
 const fallbackTable = [
-  { position: 1, name: "Jagiellonia Białystok", shortName: "JAG", points: 70, played: 34, won: 21, drawn: 7, lost: 6, goalsFor: 68, goalsAgainst: 35, goalDifference: 33, form: ["W", "W", "D", "W", "W"], badge: "🦅" },
-  { position: 2, name: "Lech Poznań", shortName: "LEP", points: 66, played: 34, won: 20, drawn: 6, lost: 8, goalsFor: 63, goalsAgainst: 40, goalDifference: 23, form: ["W", "L", "W", "W", "D"], badge: "⚽" },
-  { position: 3, name: "Legia Warszawa", shortName: "LEG", points: 63, played: 34, won: 18, drawn: 9, lost: 7, goalsFor: 57, goalsAgainst: 38, goalDifference: 19, form: ["D", "W", "W", "D", "W"], badge: "⚔️" },
-  { position: 4, name: "Raków Częstochowa", shortName: "RAK", points: 59, played: 34, won: 17, drawn: 8, lost: 9, goalsFor: 55, goalsAgainst: 42, goalDifference: 13, form: ["W", "W", "L", "D", "W"], badge: "🏰" },
-  { position: 5, name: "Cracovia", shortName: "CRA", points: 55, played: 34, won: 16, drawn: 7, lost: 11, goalsFor: 48, goalsAgainst: 44, goalDifference: 4, form: ["L", "W", "W", "L", "W"], badge: "🔴" },
-  { position: 6, name: "Pogoń Szczecin", shortName: "POG", points: 52, played: 34, won: 14, drawn: 10, lost: 10, goalsFor: 52, goalsAgainst: 45, goalDifference: 7, form: ["D", "D", "W", "W", "L"], badge: "🦁" },
-  { position: 7, name: "Zagłębie Lubin", shortName: "ZAG", points: 48, played: 34, won: 13, drawn: 9, lost: 12, goalsFor: 44, goalsAgainst: 46, goalDifference: -2, form: ["W", "D", "L", "W", "D"], badge: "⛏️" },
-  { position: 8, name: "Śląsk Wrocław", shortName: "SLA", points: 46, played: 34, won: 12, drawn: 10, lost: 12, goalsFor: 42, goalsAgainst: 47, goalDifference: -5, form: ["D", "L", "D", "W", "W"], badge: "🦅" },
-  { position: 9, name: "Górnik Zabrze", shortName: "GOR", points: 44, played: 34, won: 11, drawn: 11, lost: 12, goalsFor: 40, goalsAgainst: 44, goalDifference: -4, form: ["L", "W", "D", "D", "W"], badge: "⛏️" },
-  { position: 10, name: "Wisła Kraków", shortName: "WIS", points: 42, played: 34, won: 11, drawn: 9, lost: 14, goalsFor: 38, goalsAgainst: 50, goalDifference: -12, form: ["W", "L", "L", "W", "D"], badge: "⚪" },
-  { position: 11, name: "Warta Poznań", shortName: "WAR", points: 40, played: 34, won: 10, drawn: 10, lost: 14, goalsFor: 39, goalsAgainst: 52, goalDifference: -13, form: ["D", "L", "W", "D", "L"], badge: "🟢" },
-  { position: 12, name: "Widzew Łódź", shortName: "WID", points: 38, played: 34, won: 10, drawn: 8, lost: 16, goalsFor: 37, goalsAgainst: 55, goalDifference: -18, form: ["L", "W", "D", "L", "W"], badge: "🔴" },
-  { position: 13, name: "Piast Gliwice", shortName: "PIA", points: 36, played: 34, won: 9, drawn: 9, lost: 16, goalsFor: 35, goalsAgainst: 54, goalDifference: -19, form: ["L", "D", "L", "W", "D"], badge: "🏰" },
-  { position: 14, name: "Korona Kielce", shortName: "KOR", points: 33, played: 34, won: 8, drawn: 9, lost: 17, goalsFor: 32, goalsAgainst: 57, goalDifference: -25, form: ["L", "L", "D", "W", "L"], badge: "👑" },
-  { position: 15, name: "Stal Mielec", shortName: "STA", points: 29, played: 34, won: 7, drawn: 8, lost: 19, goalsFor: 28, goalsAgainst: 60, goalDifference: -32, form: ["L", "D", "L", "L", "D"], badge: "⚙️" },
-  { position: 16, name: "Lechia Gdańsk", shortName: "LEH", points: 22, played: 34, won: 5, drawn: 7, lost: 22, goalsFor: 24, goalsAgainst: 73, goalDifference: -49, form: ["L", "L", "L", "D", "L"], badge: "🌊" },
-  { position: 17, name: "Zagłębie Sosnowiec", shortName: "ZAS", points: 19, played: 34, won: 4, drawn: 7, lost: 23, goalsFor: 21, goalsAgainst: 78, goalDifference: -57, form: ["L", "L", "D", "L", "L"], badge: "⛏️" },
-  { position: 18, name: "Ruch Chorzów", shortName: "RUC", points: 14, played: 34, won: 3, drawn: 5, lost: 26, goalsFor: 18, goalsAgainst: 82, goalDifference: -64, form: ["L", "L", "L", "D", "L"], badge: "🔵" },
+  { team_id: "f1", team_url: "/team/lech-poznan/f1/", name: "Lech Poznan", matches_played: 30, wins: 14, draws: 10, losses: 6, goals: "55:41", goal_difference: 14, points: 52 },
+  { team_id: "f2", team_url: "/team/gornik-zabrze/f2/", name: "Gornik Zabrze", matches_played: 30, wins: 14, draws: 7, losses: 9, goals: "43:34", goal_difference: 9, points: 49 },
+  { team_id: "f3", team_url: "/team/jagiellonia/f3/", name: "Jagiellonia", matches_played: 30, wins: 12, draws: 10, losses: 8, goals: "48:37", goal_difference: 11, points: 46 },
+  { team_id: "f4", team_url: "/team/rakow-czestochowa/f4/", name: "Rakow", matches_played: 30, wins: 13, draws: 7, losses: 10, goals: "43:37", goal_difference: 6, points: 46 },
+  { team_id: "f5", team_url: "/team/wisla-plock/f5/", name: "Wisla Plock", matches_played: 30, wins: 12, draws: 9, losses: 9, goals: "32:28", goal_difference: 4, points: 45 },
+  { team_id: "f6", team_url: "/team/gks-katowice/f6/", name: "GKS Katowice", matches_played: 30, wins: 13, draws: 5, losses: 12, goals: "43:41", goal_difference: 2, points: 44 },
+  { team_id: "f7", team_url: "/team/zaglebie/f7/", name: "Zaglebie", matches_played: 30, wins: 12, draws: 8, losses: 10, goals: "43:36", goal_difference: 7, points: 44 },
+  { team_id: "f8", team_url: "/team/radomiak-radom/f8/", name: "Radomiak Radom", matches_played: 30, wins: 10, draws: 10, losses: 10, goals: "46:43", goal_difference: 3, points: 40 },
+  { team_id: "f9", team_url: "/team/motor-lublin/f9/", name: "Motor Lublin", matches_played: 30, wins: 9, draws: 12, losses: 9, goals: "39:45", goal_difference: -6, points: 39 },
+  { team_id: "f10", team_url: "/team/lechia-gdansk/f10/", name: "Lechia Gdansk", matches_played: 30, wins: 12, draws: 7, losses: 11, goals: "57:54", goal_difference: 3, points: 38 },
+  { team_id: "f11", team_url: "/team/korona-kielce/f11/", name: "Korona Kielce", matches_played: 30, wins: 10, draws: 8, losses: 12, goals: "37:36", goal_difference: 1, points: 38 },
+  { team_id: "f12", team_url: "/team/cracovia/f12/", name: "Cracovia", matches_played: 30, wins: 9, draws: 11, losses: 10, goals: "35:38", goal_difference: -3, points: 38 },
+  { team_id: "f13", team_url: "/team/pogon-szczecin/f13/", name: "Pogon Szczecin", matches_played: 30, wins: 11, draws: 5, losses: 14, goals: "40:45", goal_difference: -5, points: 38 },
+  { team_id: "f14", team_url: "/team/legia/f14/", name: "Legia", matches_played: 30, wins: 8, draws: 13, losses: 9, goals: "34:36", goal_difference: -2, points: 37 },
+  { team_id: "f15", team_url: "/team/widzew-lodz/f15/", name: "Widzew Lodz", matches_played: 30, wins: 10, draws: 6, losses: 14, goals: "36:37", goal_difference: -1, points: 36 },
+  { team_id: "f16", team_url: "/team/piast-gliwice/f16/", name: "Piast Gliwice", matches_played: 29, wins: 10, draws: 6, losses: 13, goals: "35:39", goal_difference: -4, points: 36 },
+  { team_id: "f17", team_url: "/team/arka-gdynia/f17/", name: "Arka Gdynia", matches_played: 29, wins: 9, draws: 7, losses: 13, goals: "30:50", goal_difference: -20, points: 34 },
+  { team_id: "f18", team_url: "/team/termalica-bruk-bet/f18/", name: "Termalica B-B.", matches_played: 30, wins: 7, draws: 7, losses: 16, goals: "36:55", goal_difference: -19, points: 28 },
 ];
 
-async function flashscoreFetch(path: string) {
-  const key = process.env["RAPIDAPI_KEY"];
+const cache = new Map<string, { data: unknown; expiresAt: number }>();
+const CACHE_TTL_MS = 5 * 60 * 1000;
+const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-  if (!key) {
-    throw new Error("RAPIDAPI_KEY is missing");
+async function flashscoreFetch(path: string) {
+  const cached = cache.get(path);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.data;
   }
+
+  const key = process.env["RAPIDAPI_KEY"];
+  if (!key) throw new Error("RAPIDAPI_KEY is missing");
 
   const res = await fetch(`https://flashscore4.p.rapidapi.com/api/flashscore/v2${path}`, {
     headers: {
@@ -38,12 +44,65 @@ async function flashscoreFetch(path: string) {
     },
   });
 
-  if (!res.ok) {
-    throw new Error(`Flashscore request failed: ${res.status}`);
-  }
+  if (!res.ok) throw new Error(`Flashscore request failed: ${res.status}`);
 
-  return res.json() as Promise<unknown>;
+  const data = await res.json() as unknown;
+  cache.set(path, { data, expiresAt: Date.now() + CACHE_TTL_MS });
+  return data;
 }
+
+const ALL_CACHE_KEY = "ekstraklasa-all";
+let allFetchInProgress: Promise<unknown> | null = null;
+
+async function fetchAll() {
+  const cached = cache.get(ALL_CACHE_KEY);
+  if (cached && cached.expiresAt > Date.now()) return cached.data;
+
+  if (allFetchInProgress) return allFetchInProgress;
+
+  allFetchInProgress = (async () => {
+    let standings: unknown = fallbackTable;
+    let details: unknown = null;
+    let results: unknown = [];
+
+    try {
+      standings = await flashscoreFetch(
+        `/tournaments/standings?tournament_stage_id=rgKvyuf4&tournament_id=AgtpmqHN&type=overall`,
+      );
+    } catch { /* use fallback */ }
+
+    await delay(1100);
+
+    try {
+      details = await flashscoreFetch(`/tournaments/details?tournament_stage_id=rgKvyuf4`);
+    } catch { /* details optional */ }
+
+    await delay(1100);
+
+    try {
+      results = await flashscoreFetch(
+        `/tournaments/results?tournament_template_id=lrMHUHDc&season_id=187&page=1`,
+      );
+    } catch { /* results optional */ }
+
+    const payload = { standings, details, results };
+    cache.set(ALL_CACHE_KEY, { data: payload, expiresAt: Date.now() + CACHE_TTL_MS });
+    allFetchInProgress = null;
+    return payload;
+  })();
+
+  return allFetchInProgress;
+}
+
+router.get("/ekstraklasa/all", async (req, res) => {
+  try {
+    const data = await fetchAll();
+    res.json(data);
+  } catch (err) {
+    req.log.error({ err }, "Failed to load all tournament data");
+    res.json({ standings: fallbackTable, details: null, results: [] });
+  }
+});
 
 router.get("/ekstraklasa/tournament", async (req, res) => {
   try {
@@ -111,14 +170,9 @@ router.get("/ekstraklasa/tournament/details", async (req, res) => {
 
 router.get("/ekstraklasa/tournament/standings", async (req, res) => {
   try {
-    const tournamentStageId = String(req.query["tournament_stage_id"] ?? "");
-    const tournamentId = String(req.query["tournament_id"] ?? "");
+    const tournamentStageId = String(req.query["tournament_stage_id"] ?? "rgKvyuf4");
+    const tournamentId = String(req.query["tournament_id"] ?? "AgtpmqHN");
     const type = String(req.query["type"] ?? "overall");
-
-    if (!tournamentStageId || !tournamentId) {
-      res.status(400).json({ error: "tournament_stage_id and tournament_id are required" });
-      return;
-    }
 
     const data = await flashscoreFetch(
       `/tournaments/standings?tournament_stage_id=${encodeURIComponent(tournamentStageId)}&tournament_id=${encodeURIComponent(tournamentId)}&type=${encodeURIComponent(type)}`,
@@ -126,8 +180,8 @@ router.get("/ekstraklasa/tournament/standings", async (req, res) => {
 
     res.json(data);
   } catch (err) {
-    req.log.error({ err }, "Failed to load tournament standings");
-    res.status(500).json({ error: "Failed to load tournament standings" });
+    req.log.error({ err }, "Flashscore standings failed, returning fallback");
+    res.json(fallbackTable);
   }
 });
 

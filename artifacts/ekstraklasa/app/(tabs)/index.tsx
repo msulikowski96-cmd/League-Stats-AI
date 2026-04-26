@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import {
   View,
   FlatList,
+  ScrollView,
   StyleSheet,
   Modal,
   Platform,
@@ -17,6 +18,7 @@ import { TeamRow } from "@/components/TeamRow";
 import { TeamDetail } from "@/components/TeamDetail";
 import { TableHeader } from "@/components/TableHeader";
 import { Legend } from "@/components/Legend";
+import { ResultCard } from "@/components/ResultCard";
 import { useTournament, type FlashscoreTeam } from "@/hooks/useTournament";
 import { ekstraklasaTable, type Team } from "@/data/table";
 
@@ -83,16 +85,32 @@ export default function TableScreen() {
   const { data, isLoading, error, refetch } = useTournament();
 
   const topPadding = Platform.OS === "web" ? 67 : insets.top;
-
   const isLive = data?.isLive ?? false;
   const details = data?.details ?? null;
+  const results = data?.results ?? [];
   const teams = useMemo(
     () => (isLive ? normalizeTeams(data!.standings) : ekstraklasaTable),
     [data, isLive],
   );
 
+  const ResultsStrip = results.length > 0 ? (
+    <View style={styles.resultsSection}>
+      <Text style={[styles.sectionTitle, { color: colors.mutedForeground }]}>Recent Results</Text>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.resultsScroll}
+      >
+        {results.map((r) => (
+          <ResultCard key={r.match_id} result={r} />
+        ))}
+      </ScrollView>
+    </View>
+  ) : null;
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Header */}
       <View
         style={[
           styles.header,
@@ -138,34 +156,23 @@ export default function TableScreen() {
               { backgroundColor: isLive ? colors.primary : colors.mutedForeground },
             ]}
           />
-          <Text
-            style={[
-              styles.liveText,
-              { color: isLive ? colors.primary : colors.mutedForeground },
-            ]}
-          >
+          <Text style={[styles.liveText, { color: isLive ? colors.primary : colors.mutedForeground }]}>
             {isLive ? "LIVE" : "OFFLINE"}
           </Text>
         </View>
       </View>
 
+      {/* Body */}
       {isLoading ? (
         <View style={styles.centre}>
           <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={{ color: colors.mutedForeground, marginTop: 12 }}>
-            Loading standings…
-          </Text>
+          <Text style={{ color: colors.mutedForeground, marginTop: 12 }}>Loading standings…</Text>
         </View>
       ) : error && teams.length === 0 ? (
         <View style={styles.centre}>
           <Feather name="alert-triangle" size={28} color={colors.destructive} />
-          <Text style={{ color: colors.foreground, marginTop: 12 }}>
-            Could not load standings
-          </Text>
-          <TouchableOpacity
-            onPress={() => refetch()}
-            style={[styles.retryBtn, { backgroundColor: colors.primary }]}
-          >
+          <Text style={{ color: colors.foreground, marginTop: 12 }}>Could not load standings</Text>
+          <TouchableOpacity onPress={() => refetch()} style={[styles.retryBtn, { backgroundColor: colors.primary }]}>
             <Text style={styles.retryText}>Try again</Text>
           </TouchableOpacity>
         </View>
@@ -173,7 +180,12 @@ export default function TableScreen() {
         <FlatList
           data={teams}
           keyExtractor={(item, index) => `${item.position}-${index}`}
-          ListHeaderComponent={<TableHeader />}
+          ListHeaderComponent={
+            <>
+              {ResultsStrip}
+              <TableHeader />
+            </>
+          }
           ListFooterComponent={
             <>
               <Legend />
@@ -197,9 +209,7 @@ export default function TableScreen() {
         presentationStyle="pageSheet"
         onRequestClose={() => setSelectedTeam(null)}
       >
-        {selectedTeam && (
-          <TeamDetail team={selectedTeam} onClose={() => setSelectedTeam(null)} />
-        )}
+        {selectedTeam && <TeamDetail team={selectedTeam} onClose={() => setSelectedTeam(null)} />}
       </Modal>
     </View>
   );
@@ -233,11 +243,16 @@ const styles = StyleSheet.create({
   liveDot: { width: 6, height: 6, borderRadius: 3 },
   liveText: { fontSize: 11, fontWeight: "700", letterSpacing: 1 },
   centre: { flex: 1, alignItems: "center", justifyContent: "center" },
-  retryBtn: {
-    marginTop: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
+  retryBtn: { marginTop: 12, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10 },
   retryText: { color: "#fff", fontWeight: "700" },
+  resultsSection: { paddingTop: 16, paddingBottom: 4 },
+  sectionTitle: {
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    paddingHorizontal: 16,
+    marginBottom: 10,
+  },
+  resultsScroll: { paddingHorizontal: 16, paddingBottom: 4 },
 });
