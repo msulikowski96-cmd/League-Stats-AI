@@ -8,9 +8,32 @@ import { TeamDetail } from "@/components/TeamDetail";
 import { TableHeader } from "@/components/TableHeader";
 import { Legend } from "@/components/Legend";
 import { useTournament } from "@/hooks/useTournament";
-import type { Team } from "@/data/table";
+import { ekstraklasaTable, type Team } from "@/data/table";
 
-const fallbackTeams: Team[] = [];
+function normalizeTeams(standings: unknown): Team[] {
+  if (!standings || typeof standings !== "object") return ekstraklasaTable;
+  const data = standings as { table?: unknown[]; standings?: unknown[]; teams?: unknown[] };
+  const rows = (data.table ?? data.standings ?? data.teams ?? []) as Array<Record<string, unknown>>;
+  if (!rows.length) return ekstraklasaTable;
+  return rows
+    .map((row, index) => ({
+      position: Number(row["position"] ?? index + 1),
+      name: String(row["name"] ?? row["team_name"] ?? row["team"] ?? "Unknown"),
+      shortName: String(row["shortName"] ?? row["short_name"] ?? row["abbreviation"] ?? ""),
+      played: Number(row["played"] ?? row["games_played"] ?? 0),
+      won: Number(row["won"] ?? row["wins"] ?? 0),
+      drawn: Number(row["drawn"] ?? row["draws"] ?? 0),
+      lost: Number(row["lost"] ?? row["losses"] ?? 0),
+      goalsFor: Number(row["goalsFor"] ?? row["goals_for"] ?? 0),
+      goalsAgainst: Number(row["goalsAgainst"] ?? row["goals_against"] ?? 0),
+      goalDifference: Number(row["goalDifference"] ?? row["goal_difference"] ?? 0),
+      points: Number(row["points"] ?? 0),
+      form: Array.isArray(row["form"]) ? (row["form"] as Team["form"]) : ["W", "D", "L", "W", "D"],
+      badge: String(row["badge"] ?? row["icon"] ?? "⚽"),
+    }))
+    .filter((team) => team.name !== "Unknown")
+    .sort((a, b) => a.position - b.position);
+}
 
 export default function TableScreen() {
   const colors = useColors();
@@ -20,21 +43,18 @@ export default function TableScreen() {
 
   const topPadding = Platform.OS === "web" ? 67 : insets.top;
 
-  const teams = useMemo(() => {
-    const results = data?.results as { teams?: Team[]; table?: Team[]; standings?: Team[] } | undefined;
-    return results?.table ?? results?.standings ?? results?.teams ?? fallbackTeams;
-  }, [data]);
+  const teams = useMemo(() => normalizeTeams((data as { standings?: unknown } | undefined)?.standings), [data]);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border, paddingTop: topPadding + 12 }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}> 
+      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border, paddingTop: topPadding + 12 }]}> 
         <View style={styles.headerLeft}>
           <Text style={[styles.league, { color: colors.primary }]}>Ekstraklasa</Text>
-          <Text style={[styles.season, { color: colors.mutedForeground }]}>{data?.details?.start_year ?? "2025"}/{data?.details?.end_year ?? "2026"} Season</Text>
+          <Text style={[styles.season, { color: colors.mutedForeground }]}>{data ? "Live standings" : "2025/26 Season"}</Text>
         </View>
         <View style={[styles.liveBadge, { backgroundColor: colors.accent }]}>
           <View style={[styles.liveDot, { backgroundColor: colors.primary }]} />
-          <Text style={[styles.liveText, { color: colors.primary }]}>{data?.details?.is_current ? "LIVE" : "ARCHIVE"}</Text>
+          <Text style={[styles.liveText, { color: colors.primary }]}>{data ? "LIVE" : "FALLBACK"}</Text>
         </View>
       </View>
 
