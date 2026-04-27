@@ -3,6 +3,38 @@ import { openai } from "@workspace/integrations-openai-ai-server";
 
 const router = Router();
 
+interface FlashscoreTeam {
+  team_id: string;
+  team_url: string;
+  name: string;
+  matches_played: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  goals: string;
+  goal_difference: number;
+  points: number;
+}
+
+interface FlashscoreResult {
+  match_id: string;
+  timestamp: number;
+  home_team: { team_id: string; name: string; short_name: string | null; small_image_path: string };
+  away_team: { team_id: string; name: string; short_name: string | null; small_image_path: string };
+  scores: { home: number; away: number };
+}
+
+interface TournamentDetails {
+  tournament_id: string;
+  tournament_stage_id: string;
+  name: string;
+  start_year: string;
+  end_year: string;
+  is_current: boolean;
+  stage_start_date_timestamp: number;
+  stage_end_date_timestamp: number;
+}
+
 const fallbackTable = [
   { team_id: "f1", team_url: "/team/lech-poznan/f1/", name: "Lech Poznan", matches_played: 30, wins: 14, draws: 10, losses: 6, goals: "55:41", goal_difference: 14, points: 52 },
   { team_id: "f2", team_url: "/team/gornik-zabrze/f2/", name: "Gornik Zabrze", matches_played: 30, wins: 14, draws: 7, losses: 9, goals: "43:34", goal_difference: 9, points: 49 },
@@ -279,33 +311,94 @@ router.get("/ekstraklasa/general/tournaments", async (req, res) => {
   }
 });
 
+function buildLeagueContext(data: {
+  standings: unknown;
+  details: unknown;
+  results: unknown;
+  form: unknown;
+}): string {
+  const lines: string[] = [];
+
+  const standings = Array.isArray(data.standings) ? (data.standings as FlashscoreTeam[]) : [];
+  const form = Array.isArray(data.form) ? (data.form as FlashscoreTeam[]) : [];
+  const results = Array.isArray(data.results) ? (data.results as FlashscoreResult[]) : [];
+
+  const det = data.details as TournamentDetails | null;
+  if (det?.name) {
+    lines.push(`Rozgrywki: ${det.name}`);
+    if (det.start_year && det.end_year) lines.push(`Sezon: ${det.start_year}/${det.end_year}`);
+  } else {
+    lines.push("Rozgrywki: Ekstraklasa 2025/2026");
+  }
+  lines.push("");
+
+  if (standings.length > 0) {
+    lines.push("TABELA LIGOWA (Pos | Drużyna | M | W | R | P | Bramki | RB | Pkt):");
+    standings.forEach((t, i) => {
+      const pos = (i + 1).toString().padStart(2);
+      const name = t.name.padEnd(22);
+      const m = String(t.matches_played).padStart(2);
+      const w = String(t.wins).padStart(2);
+      const d = String(t.draws).padStart(2);
+      const l = String(t.losses).padStart(2);
+      const g = String(t.goals ?? "").padStart(7);
+      const gd = (t.goal_difference >= 0 ? "+" : "") + String(t.goal_difference).padStart(3);
+      const pts = String(t.points).padStart(3);
+      lines.push(`${pos}. ${name} ${m} ${w} ${d} ${l} ${g} ${gd} ${pts}`);
+    });
+    lines.push("");
+  }
+
+  if (form.length > 0) {
+    lines.push("FORMA (ostatnie 5 meczów każdej drużyny – W | R | P | Pkt):");
+    form.forEach((t) => {
+      lines.push(`  ${t.name.padEnd(22)} ${t.wins}W ${t.draws}R ${t.losses}P → ${t.points} pkt`);
+    });
+    lines.push("");
+  }
+
+  if (results.length > 0) {
+    lines.push("OSTATNIE WYNIKI:");
+    results.slice(0, 12).forEach((r) => {
+      const date = new Date((r.timestamp ?? 0) * 1000).toLocaleDateString("pl-PL");
+      lines.push(`  ${r.home_team?.name} ${r.scores?.home}:${r.scores?.away} ${r.away_team?.name}  (${date})`);
+    });
+    lines.push("");
+  }
+
+  return lines.join("\n");
+}
+
 router.post("/ekstraklasa/analyze", async (req, res) => {
   try {
-    const { prompt, context } = req.body as { prompt: string; context: string };
+    const { prompt } = req.body as { prompt: string; context?: string };
 
-    if (!prompt || !context) {
-      res.status(400).json({ error: "prompt and context are required" });
+    if (!prompt) {
+      res.status(400).json({ error: "prompt is required" });
       return;
     }
 
-    const systemPrompt = `You are an expert football analyst specializing in Polish Ekstraklasa league. 
-You analyze league tables, team performance, trends, and make insightful predictions.
-Always respond in the same language as the user's question (Polish or English).
-Be concise but insightful — around 3-5 sentences. Focus on key patterns, strengths, weaknesses, and notable trends.`;
+    const raw = await fetchAll() as { standings: unknown; details: unknown; results: unknown; form: unknown };
+    const leagueContext = buildLeagueContext(raw);
+
+    const systemPrompt = `Jesteś ekspertem ds. polskiej Ekstraklasy. Analizujesz tabelę ligową, formę drużyn i wyniki meczów.
+Odpowiadaj ZAWSZE w tym samym języku, co pytanie użytkownika (polski lub angielski).
+Bądź konkretny i zwięzły (4-6 zdań). Powołuj się na konkretne liczby z tabeli.
+NIE zmyślaj danych — opieraj się wyłącznie na dostarczonym kontekście.`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-5.1",
-      max_completion_tokens: 512,
+      model: "gpt-4.1",
+      max_completion_tokens: 600,
       messages: [
         { role: "system", content: systemPrompt },
         {
           role: "user",
-          content: `Table/Team data:\n${context}\n\nUser question: ${prompt}`,
+          content: `AKTUALNE DANE LIGI:\n\n${leagueContext}\n\n---\nPytanie: ${prompt}`,
         },
       ],
     });
 
-    const analysis = response.choices[0]?.message?.content ?? "No analysis available.";
+    const analysis = response.choices[0]?.message?.content ?? "Brak analizy.";
     res.json({ analysis });
   } catch (err) {
     req.log.error({ err }, "Error analyzing with AI");

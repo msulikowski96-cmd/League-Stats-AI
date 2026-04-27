@@ -7,19 +7,18 @@ import { useTournament } from "@/hooks/useTournament";
 
 export function TableAnalysis() {
   const colors = useColors();
-  const { data } = useTournament();
   const [question, setQuestion] = useState("");
   const [analysis, setAnalysis] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const quickPrompts = [
-    "Who will win the championship?",
-    "Which teams are in relegation danger?",
-    "Best attack vs best defense?",
-    "Surprise teams this season?",
-    "European spots prediction",
-    "Title race analysis",
+    "Kto zostanie mistrzem?",
+    "Które drużyny są zagrożone spadkiem?",
+    "Najlepsza ofensywa vs najlepsza defensywa?",
+    "Niespodzianki tego sezonu?",
+    "Analiza walki o miejsca europejskie",
+    "Analiza walki o mistrzostwo",
   ];
 
   const handleAnalyze = async (prompt: string) => {
