@@ -3,8 +3,6 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator,
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useColors } from "@/hooks/useColors";
-import { useTournament } from "@/hooks/useTournament";
-
 export function TableAnalysis() {
   const colors = useColors();
   const [question, setQuestion] = useState("");
@@ -33,15 +31,7 @@ export function TableAnalysis() {
       const res = await fetch(`${baseUrl}/api/ekstraklasa/analyze`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          prompt: q,
-          context: JSON.stringify({
-            tournament: data?.details,
-            tournamentIds: data?.ids,
-            fixtures: data?.fixtures,
-            results: data?.results,
-          }),
-        }),
+        body: JSON.stringify({ prompt: q }),
       });
       if (!res.ok) throw new Error("Analysis failed");
       const json = (await res.json()) as { analysis: string };
@@ -60,12 +50,12 @@ export function TableAnalysis() {
         <View style={styles.heroIcon}>
           <Feather name="cpu" size={28} color="#fff" />
         </View>
-        <Text style={styles.heroTitle}>AI Table Analyzer</Text>
-        <Text style={styles.heroSub}>Ask anything about live tournament data</Text>
+        <Text style={styles.heroTitle}>Analiza AI</Text>
+        <Text style={styles.heroSub}>Zapytaj o tabelę, formę i wyniki Ekstraklasy</Text>
       </View>
 
       <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <Text style={[styles.sectionTitle, { color: colors.mutedForeground }]}>Quick Questions</Text>
+        <Text style={[styles.sectionTitle, { color: colors.mutedForeground }]}>Szybkie pytania</Text>
         <View style={styles.grid}>
           {quickPrompts.map((p) => (
             <TouchableOpacity key={p} style={[styles.promptCard, { backgroundColor: colors.accent, borderColor: colors.border }]} onPress={() => handleAnalyze(p)} activeOpacity={0.7}>
@@ -77,18 +67,18 @@ export function TableAnalysis() {
       </View>
 
       <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <Text style={[styles.sectionTitle, { color: colors.mutedForeground }]}>Custom Question</Text>
+        <Text style={[styles.sectionTitle, { color: colors.mutedForeground }]}>Własne pytanie</Text>
         <View style={[styles.inputRow, { borderColor: colors.border }]}>
-          <TextInput style={[styles.input, { color: colors.foreground }]} placeholder="Ask about the league table..." placeholderTextColor={colors.mutedForeground} value={question} onChangeText={setQuestion} multiline />
+          <TextInput style={[styles.input, { color: colors.foreground }]} placeholder="Zapytaj o tabelę, drużynę, formę..." placeholderTextColor={colors.mutedForeground} value={question} onChangeText={setQuestion} multiline />
           <TouchableOpacity style={[styles.sendBtn, { backgroundColor: colors.primary, opacity: loading || !question.trim() ? 0.4 : 1 }]} onPress={() => handleAnalyze(question)} disabled={loading || !question.trim()}>
             <Feather name="send" size={18} color="#fff" />
           </TouchableOpacity>
         </View>
       </View>
 
-      {loading && <View style={styles.loadingContainer}><ActivityIndicator size="large" color={colors.primary} /><Text style={[styles.loadingText, { color: colors.mutedForeground }]}>Analyzing league data...</Text></View>}
-      {error && <View style={[styles.errorBox, { backgroundColor: "#fee2e2", borderColor: "#ef4444" }]}><Feather name="alert-circle" size={16} color="#ef4444" /><Text style={styles.errorText}>{error}</Text></View>}
-      {analysis && <View style={[styles.analysisBox, { backgroundColor: colors.card, borderColor: colors.primary }]}><View style={styles.analysisHeader}><Feather name="cpu" size={16} color={colors.primary} /><Text style={[styles.analysisLabel, { color: colors.primary }]}>AI Analysis</Text></View><Text style={[styles.analysisText, { color: colors.foreground }]}>{analysis}</Text></View>}
+      {loading && <View style={styles.loadingContainer}><ActivityIndicator size="large" color={colors.primary} /><Text style={[styles.loadingText, { color: colors.mutedForeground }]}>Analizuję dane ligi...</Text></View>}
+      {error && <View style={[styles.errorBox, { backgroundColor: "#fee2e2", borderColor: "#ef4444" }]}><Feather name="alert-circle" size={16} color="#ef4444" /><Text style={styles.errorText}>Nie udało się pobrać analizy. Spróbuj ponownie.</Text></View>}
+      {analysis && <View style={[styles.analysisBox, { backgroundColor: colors.card, borderColor: colors.primary }]}><View style={styles.analysisHeader}><Feather name="cpu" size={16} color={colors.primary} /><Text style={[styles.analysisLabel, { color: colors.primary }]}>Analiza AI</Text></View><Text style={[styles.analysisText, { color: colors.foreground }]}>{analysis}</Text></View>}
       <View style={{ height: 60 }} />
     </ScrollView>
   );

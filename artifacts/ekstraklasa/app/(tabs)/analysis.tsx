@@ -12,8 +12,8 @@ export default function AnalysisScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border, paddingTop: topPadding + 12 }]}>
-        <Text style={[styles.title, { color: colors.foreground }]}>AI Analysis</Text>
-        <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>Powered by live Flashscore data</Text>
+        <Text style={[styles.title, { color: colors.foreground }]}>Analiza AI</Text>
+        <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>Na podstawie aktualnej tabeli Ekstraklasy</Text>
       </View>
       <TableAnalysis />
     </View>
